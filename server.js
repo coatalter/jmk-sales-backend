@@ -1,8 +1,11 @@
 require('dotenv').config();
 const Hapi = require('@hapi/hapi');
 
-const LeadsService = require('./services/leadsService');
+// Import Services
+const LeadsService = require('./services/LeadsService'); // Pastikan nama file sesuai (Case Sensitive)
 const AuthService = require('./api/auth/authService'); 
+
+// Import Plugins
 const leadsPlugin = require('./api/leads');
 const authPlugin = require('./api/auth');
 
@@ -11,6 +14,7 @@ const init = async () => {
     port: process.env.PORT || 5001,
     host: process.env.HOST || 'localhost',
     
+    // Konfigurasi Routes Global (CORS & Payload)
     routes: {
       cors: {
         origin: ['*'], 
@@ -26,9 +30,7 @@ const init = async () => {
         allow: ['application/json', 'multipart/form-data'] 
       }
     },
-    // --------------------------------------
   });
-
 
   // 1. Inisialisasi Service
   const leadsService = new LeadsService();
@@ -49,6 +51,24 @@ const init = async () => {
       },
     },
   ]);
+
+  server.route({
+    method: 'GET',
+    path: '/',
+    handler: (request, h) => {
+      return {
+        status: 'success',
+        message: 'Halo! Server JMK Sales berjalan dengan aman. 🚀',
+        version: '1.0.0',
+        endpoints: {
+          leads: '/leads',
+          login: '/login',
+          users: '/users',
+          logs: '/logs'
+        }
+      };
+    },
+  });
 
   await server.start();
   console.log(`✅ Hapi server running at: ${server.info.uri}`);
