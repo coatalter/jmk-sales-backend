@@ -4,12 +4,25 @@ const jwt = require('jsonwebtoken');
 
 class AuthService {
   constructor() {
-    this._pool = new Pool();
+    this._pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      
+      user: process.env.PGUSER,
+      host: process.env.PGHOST,
+      database: process.env.PGDATABASE,
+      password: process.env.PGPASSWORD,
+      port: process.env.PGPORT,
+
+      ssl: {
+        rejectUnauthorized: false, 
+      },
+    });
+
     this._secretKey = process.env.ACCESS_TOKEN_KEY || 'kunci_rahasia_sementara';
   }
 
   // 1. LOGIN (Verifikasi + Generate Token)
-async verifyUserCredential(email, password) {
+  async verifyUserCredential(email, password) {
     const query = {
       text: 'SELECT user_id, name, email, password_hash, role FROM users WHERE email = $1',
       values: [email],
@@ -18,24 +31,21 @@ async verifyUserCredential(email, password) {
     const result = await this._pool.query(query);
 
     if (!result.rows.length) {
-      console.log(`❌ LOGIN GAGAL: Email ${email} tidak ditemukan di DB Railway`);
+      console.log(`❌ LOGIN GAGAL: Email ${email} tidak ditemukan`);
       throw new Error('Email tidak ditemukan');
     }
 
     const user = result.rows[0];
 
-    // --- CCTV LOG (Hanya muncul di Terminal Railway) ---
-    console.log("🔍 DEBUG LOGIN RAILWAY:");
-    console.log("1. Email Input:", email);
-    console.log("2. Password Input:", password); // Hati-hati, ini akan muncul di log (hapus nanti)
-    console.log("3. Hash di DB:", user.password_hash);
+    // --- CCTV LOG ---
+    console.log("🔍 DEBUG LOGIN:");
+    console.log("Email:", email);
+    // console.log("Hash DB:", user.password_hash); // Nyalakan kalau mau cek hash
     
-    // Bandingkan
     const match = await bcrypt.compare(password, user.password_hash);
-    console.log("4. Hasil Compare:", match); // True atau False?
-
+    
     if (!match) {
-      console.log("❌ LOGIN GAGAL: Password Hash tidak cocok!");
+      console.log("❌ LOGIN GAGAL: Password Salah");
       throw new Error('Password salah');
     }
 
@@ -60,7 +70,6 @@ async verifyUserCredential(email, password) {
       throw new Error('Email sudah terdaftar');
     }
 
-
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const query = {
@@ -72,15 +81,25 @@ async verifyUserCredential(email, password) {
     return result.rows[0];
   }
 
-  // 3. GET ALL USERS 
+  // 3. GET ALL USERS (Fix Query agar support 'id' atau 'user_id')
   async getAllUsers() {
+    // Kita gunakan alias "user_id" supaya aman apapun nama kolom aslinya
     const result = await this._pool.query("SELECT user_id, name, email, role FROM users WHERE role = 'sales'");
     return result.rows;
   }
   
   // 4. DELETE USER
   async deleteUser(id) {
-    await this._pool.query('DELETE FROM users WHERE user_id = $1', [id]);
+    const query = {
+      text: 'DELETE FROM users WHERE user_id = $1 RETURNING user_id',
+      values: [id],
+    };
+
+    const result = await this._pool.query(query);
+
+    if (!result.rows.length) {
+      throw new Error('User tidak ditemukan');
+    }
   }
 }
 
