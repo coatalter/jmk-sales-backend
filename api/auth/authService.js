@@ -16,7 +16,7 @@ class AuthService {
       ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
     });
 
-    // PERBAIKAN: Baris ini harus di dalam constructor
+    // PERBAIKAN: 
     this._secretKey = process.env.ACCESS_TOKEN_KEY || 'kunci_rahasia_sementara';
   }
 
