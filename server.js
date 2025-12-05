@@ -2,7 +2,7 @@ require('dotenv').config();
 const Hapi = require('@hapi/hapi');
 
 // Import Services
-const LeadsService = require('./services/LeadsService'); // Pastikan nama file sesuai (Case Sensitive)
+const LeadsService = require('./services/leadsService'); 
 const AuthService = require('./api/auth/authService'); 
 
 // Import Plugins
