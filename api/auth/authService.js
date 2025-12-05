@@ -4,8 +4,17 @@ const jwt = require('jsonwebtoken');
 
 class AuthService {
   constructor() {
-    this._pool = new Pool();
-    this._secretKey = process.env.ACCESS_TOKEN_KEY || 'kunci_rahasia_sementara';
+    this._pool = new Pool({
+      user: process.env.PGUSER,
+      host: process.env.PGHOST,
+      database: process.env.PGDATABASE,
+      password: process.env.PGPASSWORD,
+      port: process.env.PGPORT,
+      
+  
+      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+      this._secretKey = process.env.ACCESS_TOKEN_KEY || 'kunci_rahasia_sementara';
+    });
   }
 
   // 1. LOGIN (Verifikasi + Generate Token)
