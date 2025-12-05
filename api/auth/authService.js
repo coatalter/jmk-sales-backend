@@ -9,7 +9,7 @@ class AuthService {
   }
 
   // 1. LOGIN (Verifikasi + Generate Token)
-  async verifyUserCredential(email, password) {
+async verifyUserCredential(email, password) {
     const query = {
       text: 'SELECT user_id, name, email, password_hash, role FROM users WHERE email = $1',
       values: [email],
@@ -18,21 +18,33 @@ class AuthService {
     const result = await this._pool.query(query);
 
     if (!result.rows.length) {
+      console.log(`❌ LOGIN GAGAL: Email ${email} tidak ditemukan di DB Railway`);
       throw new Error('Email tidak ditemukan');
     }
 
     const user = result.rows[0];
 
+    // --- CCTV LOG (Hanya muncul di Terminal Railway) ---
+    console.log("🔍 DEBUG LOGIN RAILWAY:");
+    console.log("1. Email Input:", email);
+    console.log("2. Password Input:", password); // Hati-hati, ini akan muncul di log (hapus nanti)
+    console.log("3. Hash di DB:", user.password_hash);
+    
+    // Bandingkan
     const match = await bcrypt.compare(password, user.password_hash);
+    console.log("4. Hasil Compare:", match); // True atau False?
+
     if (!match) {
+      console.log("❌ LOGIN GAGAL: Password Hash tidak cocok!");
       throw new Error('Password salah');
     }
 
-    // Buat JWT Token
+    console.log("✅ LOGIN SUKSES!");
+
     const accessToken = jwt.sign(
       { id: user.user_id, role: user.role }, 
       this._secretKey, 
-      { expiresIn: '1d' }
+      { expiresIn: '1d' } 
     );
 
     return {
