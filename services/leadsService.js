@@ -1,10 +1,17 @@
 const { Pool } = require('pg');
 
 class LeadsService {
-  constructor() {
-    this._pool = new Pool(); 
+constructor() {
+    this._pool = new Pool({
+      user: process.env.PGUSER,
+      host: process.env.PGHOST,
+      database: process.env.PGDATABASE,
+      password: process.env.PGPASSWORD,
+      port: process.env.PGPORT,
+      
+      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+    });
   }
-
   async getLeads({ minProbability, job } = {}) {
     const params = [];
     const where = [];
