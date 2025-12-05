@@ -4,19 +4,7 @@ const jwt = require('jsonwebtoken');
 
 class AuthService {
   constructor() {
-    this._pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
-      
-      user: process.env.PGUSER,
-      host: process.env.PGHOST,
-      database: process.env.PGDATABASE,
-      password: process.env.PGPASSWORD,
-      port: process.env.PGPORT,
-
-      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-    });
-
-    // PERBAIKAN: 
+    this._pool = new Pool();
     this._secretKey = process.env.ACCESS_TOKEN_KEY || 'kunci_rahasia_sementara';
   }
 
@@ -40,6 +28,7 @@ class AuthService {
       throw new Error('Password salah');
     }
 
+    // Buat JWT Token
     const accessToken = jwt.sign(
       { id: user.user_id, role: user.role }, 
       this._secretKey, 
@@ -52,12 +41,13 @@ class AuthService {
     };
   }
 
-  // 2. REGISTER
+  // 2. REGISTER 
   async registerUser({ name, email, password, role }) {
     const checkUser = await this._pool.query('SELECT email FROM users WHERE email = $1', [email]);
     if (checkUser.rows.length > 0) {
       throw new Error('Email sudah terdaftar');
     }
+
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -70,7 +60,7 @@ class AuthService {
     return result.rows[0];
   }
 
-  // 3. GET ALL USERS
+  // 3. GET ALL USERS 
   async getAllUsers() {
     const result = await this._pool.query("SELECT user_id, name, email, role FROM users WHERE role = 'sales'");
     return result.rows;
@@ -78,16 +68,7 @@ class AuthService {
   
   // 4. DELETE USER
   async deleteUser(id) {
-    const query = {
-      text: 'DELETE FROM users WHERE user_id = $1 RETURNING user_id',
-      values: [id],
-    };
-
-    const result = await this._pool.query(query);
-
-    if (!result.rows.length) {
-      throw new Error('User tidak ditemukan');
-    }
+    await this._pool.query('DELETE FROM users WHERE user_id = $1', [id]);
   }
 }
 
