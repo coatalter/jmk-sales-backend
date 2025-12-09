@@ -124,7 +124,7 @@ class LeadsService {
       SELECT u.name, COUNT(n.nasabah_id) as deals
       FROM nasabah n
       JOIN users u ON n.sales_id = u.user_id
-      WHERE n.status = 'closing' 
+      WHERE n.status = 'success' 
       GROUP BY u.name 
       ORDER BY deals DESC 
       LIMIT 5
